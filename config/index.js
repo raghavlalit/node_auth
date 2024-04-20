@@ -7,7 +7,7 @@ export const config = {
     db_port: process.env.DB_PORT || '',
     db_host: process.env.DB_HOST || 'localhost',
     db_user: process.env.DB_USERNAME || 'root',
-    db_password: process.env.DB_PASSWORD || 'root',
+    db_password: process.env.DB_PASSWORD || '',
     db_database: process.env.DB_DATABASE || 'node_auth',
     db_dialect: process.env.DB_DIALECT || 'mysql',
     db_debug: process.env.DB_DEBUG || 'false',

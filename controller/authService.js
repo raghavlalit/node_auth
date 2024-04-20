@@ -5,18 +5,6 @@ import { config } from '../config/index.js';
 
 const Auth = {
 
-  Test: async (req, res, next) => {
-    try {
-      const user = await User.getAllUsers();
-      res.status(201).json({
-        success: 1,
-        message: "user created successfully",
-        data: user
-      });
-    } catch (error) {
-      next(error);
-    }
-  },
   Login: async (req, res, next) => {
     // Our login logic starts here
     try {
@@ -61,14 +49,20 @@ const Auth = {
   
       // Validate user input
       if (!(email && password && name && phone && status)) {
-        return res.status(400).send("All input is required");
+        return res.status(400).json({
+          success: 0,
+          message: "All input is required",
+        });
       }
   
       // Validate if user exist in our database
       const oldUser = await User.findOne(email );
   
       if (oldUser) {
-        return res.status(409).send("User Already Exist. Please Login");
+        return res.status(409).json({
+          success: 0,
+          message: "User Already Exist. Please Login",
+        });
       }
   
       //Encrypt user password
@@ -113,7 +107,7 @@ const Auth = {
       }
   
       // return new user
-      res.status(201).json(return_obj);
+      return res.status(201).json(return_obj);
     } catch (err) {
       console.log(err);
       next(err);

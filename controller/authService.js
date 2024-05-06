@@ -2,19 +2,19 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../model/user.js';
 import { config } from '../config/index.js';
+import joi from "joi";
+import apiInputValidator from "../libraries/api_input_validator.js";
 
 const Auth = {
 
   Login: async (req, res, next) => {
     // Our login logic starts here
     try {
+      // Validate user input
+      await apiInputValidator(req.body, schema_rules.login);
       // Get user input
       const { email, password } = req.body;
   
-      // Validate user input
-      if (!(email && password)) {
-        res.status(400).send("All input is required");
-      }
       // Validate if user exist in our database
       const user = await User.findOne(email);
   
@@ -36,24 +36,18 @@ const Auth = {
       }
       res.status(400).send("Invalid Credentials");
     } catch (err) {
-      console.log(err);
-      next(err);
+      return res.status(err.statusCode).send(err);
     }
-    // Our register logic ends here
   },
+
   Register: async (req, res, next) => {
     // Our register logic starts here
     try {
+      // Validate user input
+      await apiInputValidator(req.body, schema_rules.register);
+
       // Get user input
       const { name, email, password, phone, status } = req.body;
-  
-      // Validate user input
-      if (!(email && password && name && phone && status)) {
-        return res.status(400).json({
-          success: 0,
-          message: "All input is required",
-        });
-      }
   
       // Validate if user exist in our database
       const oldUser = await User.findOne(email );
@@ -109,10 +103,23 @@ const Auth = {
       // return new user
       return res.status(201).json(return_obj);
     } catch (err) {
-      console.log(err);
-      next(err);
+      return res.status(200).json(err);
     }
   }
 }
+
+const schema_rules = {
+  login: {
+    email: joi.string().required(),
+    password: joi.string().min(5).required(),
+  },
+  register: {
+    email: joi.string().required(),
+    password: joi.string().min(5).required(),
+    name: joi.string().required(),
+    phone: joi.string().required(),
+    status: joi.string().required(),
+  }
+};
 
 export default Auth;

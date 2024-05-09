@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import User from '../model/user.js';
+import UserModel from '../model/user.js';
 import { config } from '../config/index.js';
 import joi from "joi";
 import apiInputValidator from "../libraries/api_input_validator.js";
@@ -16,7 +16,7 @@ const Auth = {
       const { email, password } = req.body;
   
       // Validate if user exist in our database
-      const user = await User.findOne(email);
+      const user = await UserModel.findOne(email);
   
       if (user && (await bcrypt.compare(password, user.vPassword))) {
         // Create token
@@ -50,7 +50,7 @@ const Auth = {
       const { name, email, password, phone, status } = req.body;
   
       // Validate if user exist in our database
-      const oldUser = await User.findOne(email );
+      const oldUser = await UserModel.findOne(email );
   
       if (oldUser) {
         return res.status(409).json({
@@ -70,7 +70,7 @@ const Auth = {
         vPhoneNo: phone,
         eStatus: status,
       };
-      const inserted_id = await User.create(insert_obj);
+      const inserted_id = await UserModel.create(insert_obj);
   
       // Create token
       const token = jwt.sign(

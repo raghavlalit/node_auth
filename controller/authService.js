@@ -39,7 +39,6 @@ const Auth = {
       return res.status(err.statusCode).send(err);
     }
   },
-
   Register: async (req, res, next) => {
     // Our register logic starts here
     try {

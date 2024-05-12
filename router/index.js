@@ -11,6 +11,8 @@ router.post('/login', Auth.Login);
 /**AUTH & REGISTER ROUTER */
 router.post('/register', Auth.Register);
 
-router.use('/users', verifyToken, userRouter);
+/**USER ROUTER */
+// router.use('/users', verifyToken, userRouter);
+router.use('/users', userRouter);
 
 export default router;

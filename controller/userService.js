@@ -159,6 +159,33 @@ const UserService = {
         error: error,
       });
     }
+  },
+  getUserInfo: async (req, res, next) => {
+    try {
+      await apiInputValidator(req.body, schema_rules.get_user_info);
+      const { requested_user_id } = req.body;
+
+      const user_profile_info = await UserModel.getUserProfileData(requested_user_id);
+      if(user_profile_info){
+        const user_skills = await UserModel.getuserSkills(requested_user_id);
+        user_profile_info.skills = user_skills;
+        const user_education = await UserModel.getuserEducation(requested_user_id);
+        user_profile_info.education = user_education;
+        const user_experience = await UserModel.getuserExperience(requested_user_id);
+        user_profile_info.experience = user_experience;
+      }
+      res.status(201).json({
+        success: 1,
+        message: "User profile details found successfully...!",
+        data: user_profile_info
+      });
+
+    } catch (error) {
+      res.status(201).json({
+        success: 0,
+        error: error,
+      });
+    }
   }
 }
 
@@ -174,12 +201,12 @@ const schema_rules = {
     city_id: joi.string().optional().allow(''),
     zipcode: joi.string().required(),
     address: joi.string().required(),
-    // user_id: joi.string().required(),
+    user_id: joi.string().required(),
   },
   update_user_skills: {
     requested_user_id: joi.string().required(),
     skills: joi.string().required(),
-    // user_id: joi.string().required(),
+    user_id: joi.string().required(),
   },
   update_user_education: {
     requested_user_id: joi.string().required(),
@@ -192,8 +219,8 @@ const schema_rules = {
         percentage: joi.string().optional().allow(''),
         cgpa: joi.string().optional().allow(''),
       }),
-    )
-    // user_id: joi.string().required(),
+    ),
+    user_id: joi.string().required(),
   },
   update_user_experience: {
     requested_user_id: joi.string().required(),
@@ -209,8 +236,12 @@ const schema_rules = {
         state_id: joi.string().required(),
         city_id: joi.string().optional().allow(''),
       }),
-    )
-    // user_id: joi.string().required(),
+    ),
+    user_id: joi.string().required(),
+  },
+  get_user_info: {
+    requested_user_id: joi.string().required(),
+    user_id: joi.string().required(),
   }
 
 };

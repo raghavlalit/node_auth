@@ -14,4 +14,6 @@ router.post('/update-user-education', UserService.updateUserEducation);
 
 router.post('/update-user-experience', UserService.updateUserExperience);
 
+router.post('/get-user-info', UserService.getUserInfo);
+
 export default router;

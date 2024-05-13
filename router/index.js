@@ -12,7 +12,7 @@ router.post('/login', Auth.Login);
 router.post('/register', Auth.Register);
 
 /**USER ROUTER */
-// router.use('/users', verifyToken, userRouter);
-router.use('/users', userRouter);
+router.use('/users', verifyToken, userRouter);
+// router.use('/users', userRouter);
 
 export default router;

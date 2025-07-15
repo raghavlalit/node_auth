@@ -9,6 +9,13 @@ const UserModel = {
     const users = await db.select('iUserId as user_id').from('sys_user').where('vEmail', email).first();
     return users;
   },
+  userBasicDetailsById: async (user_id) => {
+    const users = await db.select('vEmail as email', 'vName as name', 'vPhoneNo as phone', 'eStatus as status')
+      .from('sys_user')
+      .where('iUserId', user_id)
+      .first();
+    return users;
+  },
   findOne: async (email) => {
     const users = await db.from('sys_user').where('vEmail', email).first();
     return users;

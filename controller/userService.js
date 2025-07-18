@@ -486,6 +486,334 @@ const UserService = {
         error: "Internal server error occurred while retrieving resume information"
       });
     }
+  },
+
+  // New API methods for user resume management
+  addUserResume: async (req, res, next) => {
+    try {
+      // Validate input data
+      await apiInputValidator(req.body, schema_rules.add_user_resume);
+      
+      const { user_id, resume_name } = req.body;
+
+      // Check if user exists
+      const userExists = await UserModel.userBasicDetailsById(user_id);
+      if (!userExists) {
+        return res.status(404).json({
+          success: 0,
+          error: "User not found",
+          message: "The requested user does not exist"
+        });
+      }
+
+      // Check if resume name already exists for this user
+      const existingResumes = await UserModel.getUserResumes(user_id);
+      const duplicateName = existingResumes.find(resume => 
+        resume.resume_name.toLowerCase() === resume_name.toLowerCase()
+      );
+
+      if (duplicateName) {
+        return res.status(409).json({
+          success: 0,
+          error: "Duplicate resume name",
+          message: "A resume with this name already exists for this user"
+        });
+      }
+
+      // Prepare resume data
+      const resumeData = {
+        iUserId: user_id,
+        vResumeName: resume_name,
+        dtAddedDate: await getDateTime(),
+        eStatus: 'Active'
+      };
+
+      // Insert new resume
+      const result = await UserModel.insertUserResume(resumeData);
+      
+      // Get the created resume
+      const createdResume = await UserModel.getResumeById(result[0]);
+
+      res.status(201).json({
+        success: 1,
+        message: "Resume added successfully",
+        data: {
+          resume_id: createdResume.resume_id,
+          resume_name: createdResume.resume_name,
+          user_id: createdResume.user_id,
+          added_date: createdResume.added_date,
+          status: createdResume.status
+        }
+      });
+
+    } catch (error) {
+      console.error('Error in addUserResume:', error);
+      
+      // Handle specific validation errors
+      if (error.isJoi) {
+        return res.status(400).json({
+          success: 0,
+          error: "Validation error",
+          message: "Invalid input data",
+          details: error.details.map(detail => ({
+            field: detail.path.join('.'),
+            message: detail.message
+          }))
+        });
+      }
+
+      // Handle database errors
+      if (error.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({
+          success: 0,
+          error: "Duplicate entry",
+          message: "A resume with this name already exists"
+        });
+      }
+
+      res.status(500).json({
+        success: 0,
+        error: "Internal server error occurred while adding resume"
+      });
+    }
+  },
+
+  updateUserResume: async (req, res, next) => {
+    try {
+      // Validate input data
+      await apiInputValidator(req.body, schema_rules.update_user_resume);
+      
+      const { resume_id, user_id, resume_name } = req.body;
+
+      // Check if user exists
+      const userExists = await UserModel.userBasicDetailsById(user_id);
+      if (!userExists) {
+        return res.status(404).json({
+          success: 0,
+          error: "User not found",
+          message: "The requested user does not exist"
+        });
+      }
+
+      // Check if resume exists
+      const resumeExists = await UserModel.isResumeExist(resume_id);
+      if (!resumeExists) {
+        return res.status(404).json({
+          success: 0,
+          error: "Resume not found",
+          message: "The requested resume does not exist"
+        });
+      }
+
+      // Get current resume to verify ownership
+      const currentResume = await UserModel.getResumeById(resume_id);
+      if (currentResume.user_id != user_id) {
+        return res.status(403).json({
+          success: 0,
+          error: "Access denied",
+          message: "You can only update your own resumes"
+        });
+      }
+
+      // Check if new name conflicts with other resumes of the same user
+      const existingResumes = await UserModel.getUserResumes(user_id);
+      const duplicateName = existingResumes.find(resume => 
+        resume.resume_id != resume_id && 
+        resume.resume_name.toLowerCase() === resume_name.toLowerCase()
+      );
+
+      if (duplicateName) {
+        return res.status(409).json({
+          success: 0,
+          error: "Duplicate resume name",
+          message: "A resume with this name already exists for this user"
+        });
+      }
+
+      // Prepare update data
+      const updateData = {
+        vResumeName: resume_name,
+        dtUpdatedDate: await getDateTime()
+      };
+
+      // Update resume
+      await UserModel.updateUserResume(updateData, resume_id);
+      
+      // Get the updated resume
+      const updatedResume = await UserModel.getResumeById(resume_id);
+
+      res.status(200).json({
+        success: 1,
+        message: "Resume updated successfully",
+        data: {
+          resume_id: updatedResume.resume_id,
+          resume_name: updatedResume.resume_name,
+          user_id: updatedResume.user_id,
+          updated_date: updatedResume.updated_date,
+          status: updatedResume.status
+        }
+      });
+
+    } catch (error) {
+      console.error('Error in updateUserResume:', error);
+      
+      // Handle specific validation errors
+      if (error.isJoi) {
+        return res.status(400).json({
+          success: 0,
+          error: "Validation error",
+          message: "Invalid input data",
+          details: error.details.map(detail => ({
+            field: detail.path.join('.'),
+            message: detail.message
+          }))
+        });
+      }
+
+      // Handle database errors
+      if (error.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({
+          success: 0,
+          error: "Duplicate entry",
+          message: "A resume with this name already exists"
+        });
+      }
+
+      res.status(500).json({
+        success: 0,
+        error: "Internal server error occurred while updating resume"
+      });
+    }
+  },
+
+  getUserResumes: async (req, res, next) => {
+    try {
+      // Validate input data
+      await apiInputValidator(req.body, schema_rules.get_user_resumes);
+      
+      const { user_id } = req.body;
+
+      // Check if user exists
+      const userExists = await UserModel.userBasicDetailsById(user_id);
+      if (!userExists) {
+        return res.status(404).json({
+          success: 0,
+          error: "User not found",
+          message: "The requested user does not exist"
+        });
+      }
+
+      // Get user resumes
+      const resumes = await UserModel.getUserResumes(user_id);
+      const resumeCount = await UserModel.getUserResumeCount(user_id);
+
+      res.status(200).json({
+        success: 1,
+        message: "User resumes retrieved successfully",
+        data: {
+          resumes: resumes,
+          total_count: resumeCount,
+          user: {
+            user_id: userExists.user_id,
+            name: userExists.name,
+            email: userExists.email
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Error in getUserResumes:', error);
+      
+      // Handle specific validation errors
+      if (error.isJoi) {
+        return res.status(400).json({
+          success: 0,
+          error: "Validation error",
+          message: "Invalid input data",
+          details: error.details.map(detail => ({
+            field: detail.path.join('.'),
+            message: detail.message
+          }))
+        });
+      }
+
+      res.status(500).json({
+        success: 0,
+        error: "Internal server error occurred while retrieving user resumes"
+      });
+    }
+  },
+
+  deleteUserResume: async (req, res, next) => {
+    try {
+      // Validate input data
+      await apiInputValidator(req.body, schema_rules.delete_user_resume);
+      
+      const { resume_id, user_id } = req.body;
+
+      // Check if user exists
+      const userExists = await UserModel.userBasicDetailsById(user_id);
+      if (!userExists) {
+        return res.status(404).json({
+          success: 0,
+          error: "User not found",
+          message: "The requested user does not exist"
+        });
+      }
+
+      // Check if resume exists
+      const resumeExists = await UserModel.isResumeExist(resume_id);
+      if (!resumeExists) {
+        return res.status(404).json({
+          success: 0,
+          error: "Resume not found",
+          message: "The requested resume does not exist"
+        });
+      }
+
+      // Get current resume to verify ownership
+      const currentResume = await UserModel.getResumeById(resume_id);
+      if (currentResume.user_id != user_id) {
+        return res.status(403).json({
+          success: 0,
+          error: "Access denied",
+          message: "You can only delete your own resumes"
+        });
+      }
+
+      // Soft delete resume (set status to Inactive)
+      await UserModel.deleteUserResume(resume_id);
+
+      res.status(200).json({
+        success: 1,
+        message: "Resume deleted successfully",
+        data: {
+          resume_id: resume_id,
+          deleted_at: await getDateTime()
+        }
+      });
+
+    } catch (error) {
+      console.error('Error in deleteUserResume:', error);
+      
+      // Handle specific validation errors
+      if (error.isJoi) {
+        return res.status(400).json({
+          success: 0,
+          error: "Validation error",
+          message: "Invalid input data",
+          details: error.details.map(detail => ({
+            field: detail.path.join('.'),
+            message: detail.message
+          }))
+        });
+      }
+
+      res.status(500).json({
+        success: 0,
+        error: "Internal server error occurred while deleting resume"
+      });
+    }
   }
 }
 
@@ -584,6 +912,51 @@ const schema_rules = {
   },
   get_resume_info: {
     requested_user_id: joi.required()
+  },
+  // New validation schemas for resume management
+  add_user_resume: {
+    user_id: joi.string().required().messages({
+      'string.empty': 'User ID is required',
+      'any.required': 'User ID is required'
+    }),
+    resume_name: joi.string().required().min(3).max(100).messages({
+      'string.empty': 'Resume name is required',
+      'string.min': 'Resume name must be at least 3 characters long',
+      'string.max': 'Resume name cannot exceed 100 characters',
+      'any.required': 'Resume name is required'
+    })
+  },
+  update_user_resume: {
+    resume_id: joi.string().required().messages({
+      'string.empty': 'Resume ID is required',
+      'any.required': 'Resume ID is required'
+    }),
+    user_id: joi.string().required().messages({
+      'string.empty': 'User ID is required',
+      'any.required': 'User ID is required'
+    }),
+    resume_name: joi.string().required().min(3).max(100).messages({
+      'string.empty': 'Resume name is required',
+      'string.min': 'Resume name must be at least 3 characters long',
+      'string.max': 'Resume name cannot exceed 100 characters',
+      'any.required': 'Resume name is required'
+    })
+  },
+  get_user_resumes: {
+    user_id: joi.string().required().messages({
+      'string.empty': 'User ID is required',
+      'any.required': 'User ID is required'
+    })
+  },
+  delete_user_resume: {
+    resume_id: joi.string().required().messages({
+      'string.empty': 'Resume ID is required',
+      'any.required': 'Resume ID is required'
+    }),
+    user_id: joi.string().required().messages({
+      'string.empty': 'User ID is required',
+      'any.required': 'User ID is required'
+    })
   }
 };
 

@@ -498,9 +498,192 @@ Content-Type: application/json
 
 ---
 
+## 📄 Resume Management Endpoints
+
+### 11. Add User Resume
+**Endpoint:** `POST /users/add-user-resume`
+
+**Description:** Add a new resume for a user
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "user_id": "1",
+  "resume_name": "My Professional Resume"
+}
+```
+
+**Response (Success - 201):**
+```json
+{
+  "success": 1,
+  "message": "Resume added successfully",
+  "data": {
+    "resume_id": "1",
+    "resume_name": "My Professional Resume",
+    "user_id": "1",
+    "added_date": "2024-01-15 10:30:00",
+    "status": "Active"
+  }
+}
+```
+
+**Response (Error - 409):**
+```json
+{
+  "success": 0,
+  "error": "Duplicate resume name",
+  "message": "A resume with this name already exists for this user"
+}
+```
+
+### 12. Get User Resumes
+**Endpoint:** `POST /users/get-user-resumes`
+
+**Description:** Get all resumes for a user
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "user_id": "1"
+}
+```
+
+**Response (Success - 200):**
+```json
+{
+  "success": 1,
+  "message": "User resumes retrieved successfully",
+  "data": {
+    "resumes": [
+      {
+        "resume_id": "1",
+        "user_id": "1",
+        "resume_name": "My Professional Resume",
+        "added_date": "2024-01-15 10:30:00",
+        "updated_date": null,
+        "status": "Active"
+      },
+      {
+        "resume_id": "2",
+        "user_id": "1",
+        "resume_name": "Creative Portfolio",
+        "added_date": "2024-01-15 11:00:00",
+        "updated_date": "2024-01-15 11:30:00",
+        "status": "Active"
+      }
+    ],
+    "total_count": 2,
+    "user": {
+      "user_id": "1",
+      "name": "John Doe",
+      "email": "john@example.com"
+    }
+  }
+}
+```
+
+### 13. Update User Resume
+**Endpoint:** `POST /users/update-user-resume`
+
+**Description:** Update an existing resume
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "resume_id": "1",
+  "user_id": "1",
+  "resume_name": "Updated Professional Resume"
+}
+```
+
+**Response (Success - 200):**
+```json
+{
+  "success": 1,
+  "message": "Resume updated successfully",
+  "data": {
+    "resume_id": "1",
+    "resume_name": "Updated Professional Resume",
+    "user_id": "1",
+    "updated_date": "2024-01-15 10:35:00",
+    "status": "Active"
+  }
+}
+```
+
+**Response (Error - 403):**
+```json
+{
+  "success": 0,
+  "error": "Access denied",
+  "message": "You can only update your own resumes"
+}
+```
+
+### 14. Delete User Resume
+**Endpoint:** `POST /users/delete-user-resume`
+
+**Description:** Soft delete a resume (sets status to Inactive)
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "resume_id": "1",
+  "user_id": "1"
+}
+```
+
+**Response (Success - 200):**
+```json
+{
+  "success": 1,
+  "message": "Resume deleted successfully",
+  "data": {
+    "resume_id": "1",
+    "deleted_at": "2024-01-15 10:40:00"
+  }
+}
+```
+
+**Response (Error - 404):**
+```json
+{
+  "success": 0,
+  "error": "Resume not found",
+  "message": "The requested resume does not exist"
+}
+```
+
+---
+
 ## 🔍 Health Check Endpoints
 
-### 11. System Health
+### 15. System Health
 **Endpoint:** `GET /health`
 
 **Description:** Check system health and database connectivity
@@ -585,11 +768,17 @@ curl -X POST http://localhost:4001/api/login \
   -H "Content-Type: application/json" \
   -d '{"email": "user@example.com", "password": "password123"}'
 
-# Test get resume info
-curl -X POST http://localhost:4001/api/users/get-resume-info \
+# Test add resume
+curl -X POST http://localhost:4001/api/users/add-user-resume \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
-  -d '{"requested_user_id": "1"}'
+  -d '{"user_id": "1", "resume_name": "My Professional Resume"}'
+
+# Test get resumes
+curl -X POST http://localhost:4001/api/users/get-user-resumes \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"user_id": "1"}'
 ```
 
 ### Using Postman/Insomnia
@@ -628,3 +817,305 @@ curl -X POST http://localhost:4001/api/users/get-resume-info \
 3. **Input Validation**: All inputs are validated server-side
 4. **Rate Limiting**: Implement client-side rate limiting
 5. **Error Messages**: Don't expose sensitive information in errors 
+
+---
+
+## 🛡️ Admin Authentication & Management Endpoints
+
+### 1. Admin Login
+**Endpoint:** `POST /admin/login`
+
+**Description:** Authenticate admin and receive JWT token
+
+**Request Body:**
+```json
+{
+  "email": "admin@example.com",
+  "password": "AdminPass123!"
+}
+```
+
+**Response (Success - 200):**
+```json
+{
+  "success": 1,
+  "message": "Admin login successful",
+  "data": {
+    "admin": {
+      "admin_id": 1,
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "phone": "1234567890",
+      "status": "Active",
+      "role": "admin",
+      "permissions": "all",
+      "created_at": "2024-01-15T10:30:00.000Z",
+      "last_login": "2024-01-15T10:30:00.000Z"
+    },
+    "token": "<jwt-token>",
+    "token_type": "Bearer",
+    "expires_in": "24h"
+  }
+}
+```
+
+**Response (Error - 401):**
+```json
+{
+  "success": 0,
+  "message": "Invalid email or password",
+  "error": "ADMIN_AUTH_001"
+}
+```
+
+---
+
+### 2. Admin Registration
+**Endpoint:** `POST /admin/register`
+
+**Description:** Register a new admin account
+
+**Request Body:**
+```json
+{
+  "name": "Admin User",
+  "email": "admin@example.com",
+  "password": "AdminPass123!",
+  "phone": "1234567890",
+  "role": "admin",
+  "permissions": "all",
+  "status": "Active"
+}
+```
+
+**Response (Success - 201):**
+```json
+{
+  "success": 1,
+  "message": "Admin registered successfully",
+  "data": {
+    "admin_id": 1,
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "role": "admin",
+    "token": "<jwt-token>",
+    "token_type": "Bearer",
+    "expires_in": "24h"
+  }
+}
+```
+
+**Response (Error - 409):**
+```json
+{
+  "success": 0,
+  "message": "Admin already exists. Please login instead.",
+  "error": "ADMIN_REG_001"
+}
+```
+
+---
+
+### 3. Get Admin Profile
+**Endpoint:** `GET /admin/profile`
+
+**Description:** Retrieve the authenticated admin's profile
+
+**Headers:**
+```
+Authorization: Bearer <admin-jwt-token>
+```
+
+**Response (Success - 200):**
+```json
+{
+  "success": 1,
+  "message": "Admin profile retrieved successfully",
+  "data": {
+    "admin": {
+      "admin_id": 1,
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "phone": "1234567890",
+      "status": "Active",
+      "role": "admin",
+      "permissions": "all",
+      "created_at": "2024-01-15T10:30:00.000Z",
+      "updated_at": "2024-01-15T10:30:00.000Z"
+    }
+  }
+}
+```
+
+---
+
+### 4. Admin Management (Super Admin Only)
+
+#### a. Get All Admins
+**Endpoint:** `GET /admin/all`
+
+**Headers:**
+```
+Authorization: Bearer <super-admin-jwt-token>
+```
+
+**Response (Success - 200):**
+```json
+{
+  "success": 1,
+  "message": "Admins retrieved successfully",
+  "data": {
+    "admins": [
+      {
+        "admin_id": 1,
+        "name": "Admin User",
+        "email": "admin@example.com",
+        "phone": "1234567890",
+        "role": "admin",
+        "permissions": "all",
+        "status": "Active",
+        "added_date": "2024-01-15T10:30:00.000Z",
+        "updated_date": "2024-01-15T10:30:00.000Z"
+      }
+    ],
+    "count": 1
+  }
+}
+```
+
+#### b. Get Admin Statistics
+**Endpoint:** `GET /admin/stats`
+
+**Headers:**
+```
+Authorization: Bearer <admin-jwt-token>
+```
+
+**Response (Success - 200):**
+```json
+{
+  "success": 1,
+  "message": "Admin statistics retrieved successfully",
+  "data": {
+    "statistics": {
+      "total_admins": 3,
+      "active_admins": 2,
+      "inactive_admins": 1,
+      "super_admins": 1,
+      "regular_admins": 1,
+      "moderators": 1
+    }
+  }
+}
+```
+
+#### c. Search Admins
+**Endpoint:** `GET /admin/search?q=<search-term>`
+
+**Headers:**
+```
+Authorization: Bearer <admin-jwt-token>
+```
+
+**Response (Success - 200):**
+```json
+{
+  "success": 1,
+  "message": "Admin search completed successfully",
+  "data": {
+    "admins": [
+      {
+        "admin_id": 1,
+        "name": "Admin User",
+        "email": "admin@example.com",
+        "phone": "1234567890",
+        "role": "admin",
+        "permissions": "all",
+        "status": "Active",
+        "added_date": "2024-01-15T10:30:00.000Z"
+      }
+    ],
+    "count": 1,
+    "search_term": "admin"
+  }
+}
+```
+
+#### d. Get Admins by Role
+**Endpoint:** `GET /admin/role/:role`
+
+**Headers:**
+```
+Authorization: Bearer <admin-jwt-token>
+```
+
+**Response (Success - 200):**
+```json
+{
+  "success": 1,
+  "message": "Admins with role 'admin' retrieved successfully",
+  "data": {
+    "admins": [
+      {
+        "admin_id": 1,
+        "name": "Admin User",
+        "email": "admin@example.com",
+        "phone": "1234567890",
+        "role": "admin",
+        "permissions": "all",
+        "status": "Active",
+        "added_date": "2024-01-15T10:30:00.000Z"
+      }
+    ],
+    "count": 1,
+    "role": "admin"
+  }
+}
+```
+
+#### e. Update Admin Status
+**Endpoint:** `PATCH /admin/:admin_id/status`
+
+**Headers:**
+```
+Authorization: Bearer <super-admin-jwt-token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "status": "Inactive"
+}
+```
+
+**Response (Success - 200):**
+```json
+{
+  "success": 1,
+  "message": "Admin status updated to 'Inactive' successfully",
+  "data": {
+    "admin_id": 1,
+    "status": "Inactive"
+  }
+}
+```
+
+#### f. Delete Admin
+**Endpoint:** `DELETE /admin/:admin_id`
+
+**Headers:**
+```
+Authorization: Bearer <super-admin-jwt-token>
+```
+
+**Response (Success - 200):**
+```json
+{
+  "success": 1,
+  "message": "Admin deleted successfully",
+  "data": {
+    "admin_id": 1
+  }
+}
+``` 

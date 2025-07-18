@@ -3,8 +3,16 @@ import Auth from "../controller/authService.js";
 import verifyToken from "../middleware/auth.js";
 import userRouter from './user.routes.js';
 import UserService from "../controller/userService.js";
+import adminRouter from './admin.routes.js';
+import adminManagementRouter from './adminManagement.routes.js';
 
 const router = express.Router();
+
+/** ADMIN ROUTER */
+router.use('/admin', adminRouter);
+
+/** ADMIN MANAGEMENT ROUTER */
+router.use('/admin-management', adminManagementRouter);
 
 /**AUTH & LOGIN ROUTER */
 router.post('/login', Auth.Login);
